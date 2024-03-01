@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop, no-loop-func, no-unused-expressions */
 import { Operation, Ops, Runnable } from "./operations";
 import { runAsPromiseResult } from "./runAsPromiseResult";
-import { Stack } from "../../arrow/internal/stack";
+import { Stack } from "./stack";
 import { worker } from "./worker";
 
 export function runner(operations: Stack<Operation>) {

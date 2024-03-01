@@ -3,7 +3,7 @@ import { Either } from "../either";
 import { Operation, Ops } from "./internal/operations";
 import { runAsPromiseResult } from "./internal/runAsPromiseResult";
 import { runner } from "./internal/runner";
-import { Stack } from "../arrow/internal/stack";
+import { Stack } from "./internal/stack";
 // import { as } from "./combinators";
 
 /**

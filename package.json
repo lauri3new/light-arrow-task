@@ -1,11 +1,11 @@
 {
-  "name": "@light-arrow/arrow",
+  "name": "@light-arrow/task",
   "version": "1.1.10",
   "publishConfig": {
     "access": "public"
   },
   "description": "type safe asynchronous typescript",
-  "repository": "https://github.com/lauri3new/light-arrow",
+  "repository": "https://github.com/lauri3new/light-arrow-task",
   "main": "dist/index.js",
   "files": [
     "dist/**/*"
