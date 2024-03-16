@@ -1,19 +1,20 @@
 import { Runner } from "./runner";
 
-export async function runAsPromiseResult(a: Runner) {
-  const { hasError, error, failure, result } = await a.run();
-  if (hasError) {
+export async function runResult(a: Runner) {
+  const { tag, value } = await a.run();
+
+  if (tag === "error") {
     // eslint-disable-next-line no-throw-literal
     throw {
       tag: "error",
-      value: error,
+      value: value,
     };
-  } else if (failure) {
+  } else if (tag === "failure") {
     // eslint-disable-next-line no-throw-literal
     throw {
       tag: "failure",
-      value: failure,
+      value: value,
     };
   }
-  return result;
+  return value;
 }

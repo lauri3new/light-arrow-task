@@ -19,14 +19,14 @@ it("Task should orElse", async () => {
     res(1);
   });
 
-  const result = await orElse(a, a, b).runAsPromiseResult();
+  const result = await orElse(a, a, b).runResult();
   expect(result).toEqual(1);
 });
 
 it("Task should sequence", async () => {
   const a = constructTask((res) => res(3));
 
-  const result = await sequence([a, a, a]).runAsPromiseResult();
+  const result = await sequence([a, a, a]).runResult();
 
   expect(result).toEqual([3, 3, 3]);
 });
@@ -38,7 +38,7 @@ it("Task should repeat", async () => {
     res(undefined);
   });
 
-  await repeat(100)(a).runAsPromiseResult();
+  await repeat(100)(a).runResult();
   expect(count).toEqual(100);
 });
 
@@ -52,7 +52,7 @@ it("Task should retry", async () => {
     return rej(undefined);
   });
   const c = retry(4)(a);
-  await c.runAsPromiseResult();
+  await c.runResult();
   expect(count).toEqual(3);
 });
 
@@ -61,7 +61,7 @@ it("Task should all", async () => {
     sleep(100).then(() => res(3));
   });
   const p1 = performance.now();
-  const result = await all([a, a, a]).runAsPromiseResult();
+  const result = await all([a, a, a]).runResult();
   const p2 = performance.now();
   expect(result).toEqual([3, 3, 3]);
   expect(p2 - p1 < 200);
@@ -97,7 +97,7 @@ it("Task should all - cancel on exception", async () => {
         clearTimeout(a);
       };
     }),
-  ]).runAsPromise();
+  ]).run();
   expect(i).toEqual(2);
 });
 
@@ -122,7 +122,7 @@ it("Task should all - cancel on error", async () => {
         return res(null);
       });
     }),
-  ]).runAsPromise();
+  ]).run();
   expect(i).toEqual(2);
 });
 
@@ -133,7 +133,7 @@ it("Task should all with concurrency limit", async () => {
     });
   });
   const p1 = performance.now();
-  const result = await all([a, a, a, a, a, a], 3).runAsPromiseResult();
+  const result = await all([a, a, a, a, a, a], 3).runResult();
   const p2 = performance.now();
   expect(result).toEqual([3, 3, 3, 3, 3, 3]);
   expect(p2 - p1 < 300).toBe(true);
@@ -157,7 +157,7 @@ it("Task should race", async () => {
         res(6);
       });
     }),
-  ]).runAsPromiseResult();
+  ]).runResult();
   const p2 = performance.now();
   expect(result).toEqual(1);
   expect(p2 - p1 < 200).toBe(true);
@@ -187,7 +187,7 @@ it("Task should all concurrent - cancel on exception", async () => {
       }),
     ],
     2
-  ).runAsPromise();
+  ).run();
   expect(i).toEqual(2);
 });
 
@@ -209,7 +209,7 @@ it("Task should group (in sequence)", async () => {
         res(3);
       });
     })
-  ).runAsPromiseResult();
+  ).runResult();
   const p2 = performance.now();
   expect(result).toEqual([3, 3, 3]);
   expect(p2 - p1 < 1100).toBe(true);
@@ -244,7 +244,7 @@ it("Task should groupParallel", async () => {
         res(3);
       });
     })
-  ).runAsPromiseResult();
+  ).runResult();
   const p2 = performance.now();
   expect(result).toEqual([3, 3, 3, 3, 3]);
   expect(p2 - p1 < 700).toBe(true);
@@ -263,7 +263,7 @@ it("constructed Task should cancel ongoing and subsequent operations and clean u
     };
   })
     .map((b) => b + 1)
-    .run(
+    .runF(
       () => {},
       () => {},
       () => {}
@@ -287,7 +287,7 @@ it("promise based Task should cancel subsequent operations", async () => {
       c = true;
       return b + 1;
     })
-    .run(
+    .runF(
       () => {
         c = true;
       },

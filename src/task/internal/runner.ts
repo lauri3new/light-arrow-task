@@ -1,6 +1,6 @@
 /* eslint-disable no-await-in-loop, no-loop-func, no-unused-expressions */
 import { Operation, Ops, Runnable } from "./operations";
-import { runAsPromiseResult } from "./runAsPromiseResult";
+import { runResult } from "./runResult";
 import { Stack } from "./stack";
 import { worker } from "./worker";
 
@@ -79,9 +79,7 @@ export function runner(operations: Stack<Operation>) {
         const op = stack.pop();
         if (this.cancelled() || !op) {
           return {
-            hasError: false,
-            failure: undefined,
-            error,
+            tag: "success" as const,
             result,
           };
         }
@@ -95,15 +93,15 @@ export function runner(operations: Stack<Operation>) {
                 break;
               }
               case Ops.leftFlatMap: {
-                x = op.f(error);
-                x = await op.f(error).runAsPromise();
-                error = x.result;
+                x = await op.f(error).run();
+                error = x.value;
                 break;
               }
               case Ops.orElse: {
                 resetError();
                 if (typeof op.f === "function") {
                   x = await op.f();
+                  console.log(x);
                   x.match(matchError, matchResult);
                 } else {
                   stack.push(...op.f.__ops.toArray());
@@ -126,16 +124,16 @@ export function runner(operations: Stack<Operation>) {
               }
               case Ops.bracket: {
                 x = op.f[1](result);
-                x = await x.runAsPromise();
+                x = await x.run();
                 const a = op.f[0](result);
-                await a.runAsPromise();
-                if (x.failure) {
-                  throw x.failure;
+                await a.run();
+                if (x.tag === "failure") {
+                  throw x.value;
                 }
-                if (x.error) {
-                  matchError(x.error);
+                if (x.value) {
+                  matchError(x.value);
                 } else {
-                  matchResult(x.result);
+                  matchResult(x.value);
                 }
                 break;
               }
@@ -161,7 +159,7 @@ export function runner(operations: Stack<Operation>) {
                       op.f.map(async (_f) => {
                         const a = runner(_f.__ops);
                         cancellables.push(a.cancel);
-                        return runAsPromiseResult(a);
+                        return runResult(a);
                       })
                     );
                     cancellables = [];
@@ -178,23 +176,21 @@ export function runner(operations: Stack<Operation>) {
                 }
                 break;
               case Ops.race:
-                result = await Promise.race(
-                  op.f.map((_f) => _f.runAsPromiseResult())
-                );
+                result = await Promise.race(op.f.map((_f) => _f.runResult()));
                 break;
               case Ops.andThen: {
                 if (typeof op.f === "function") {
                   x = await op.f(result);
                   x.match(matchError, matchResult);
                 } else {
-                  x = await op.f.runAsPromise();
-                  if (x.failure) {
-                    throw x.failure;
+                  x = await op.f.run();
+                  if (x.tag === "failure") {
+                    throw x.value;
                   }
-                  if (x.error) {
-                    matchError(x.error);
+                  if (x.value) {
+                    matchError(x.value);
                   } else {
-                    matchResult(x.result);
+                    matchResult(x.value);
                   }
                 }
                 break;
@@ -204,14 +200,14 @@ export function runner(operations: Stack<Operation>) {
                   x = await op.f();
                   x.match(matchError, matchGroupResult);
                 } else {
-                  x = await op.f.runAsPromise();
-                  if (x.failure) {
-                    throw x.failure;
+                  x = await op.f.run();
+                  if (x.tag === "failure") {
+                    throw x.value;
                   }
-                  if (x.error) {
-                    matchError(x.error);
+                  if (x.tag === "error") {
+                    matchError(x.value);
                   } else {
-                    matchResult([result, x.result]);
+                    matchResult([result, x.value]);
                   }
                 }
                 break;
@@ -221,12 +217,14 @@ export function runner(operations: Stack<Operation>) {
                   x = await op.f();
                   x.match(matchError, noChange);
                 } else {
-                  x = await op.f.runAsPromise();
-                  if (x.failure) {
-                    throw x.failure;
+                  x = await op.f.run();
+                  if (x.tag === "failure") {
+                    throw x.value;
                   }
-                  if (x.error) {
-                    matchError(x.error);
+                  if (x.tag === "error") {
+                    matchError(x.value);
+                  } else {
+                    matchResult(result);
                   }
                 }
                 break;
@@ -265,18 +263,33 @@ export function runner(operations: Stack<Operation>) {
             }
           }
         } catch (e) {
+          if (e) {
+            return {
+              tag: "failure" as const,
+              value: e,
+            };
+          }
+          if (isLeft) {
+            return {
+              tag: "error" as const,
+              value: error,
+            };
+          }
           return {
-            hasError: isLeft,
-            failure: e,
-            error,
-            result,
+            tag: "success" as const,
+            value: result,
           };
         }
       }
+      if (isLeft) {
+        return {
+          tag: "error" as const,
+          value: error,
+        };
+      }
       return {
-        hasError: isLeft,
-        error,
-        result,
+        tag: "success" as const,
+        value: result,
       };
     },
   };

@@ -9,7 +9,7 @@ it("should be stack safe - recursion case", () => {
     }
     return resolve({}).flatMap(() => a(n - 1));
   }
-  a(100000).runAsPromiseResult();
+  a(100000).runResult();
 });
 
 it("should be stack safe - recursion case", async () => {
@@ -19,7 +19,7 @@ it("should be stack safe - recursion case", async () => {
     }
     return constructTask((res) => res(1)).flatMap(() => a(n - 1));
   }
-  await a(100000).runAsPromiseResult();
+  await a(100000).runResult();
 });
 
 it("map should not stack overflow", async () => {
@@ -30,7 +30,7 @@ it("map should not stack overflow", async () => {
   for (let i = 0; i < 100000; i += 1) {
     a = a.map((c: number) => c + 1);
   }
-  const result = await a.runAsPromiseResult();
+  const result = await a.runResult();
   expect(result).toEqual(100001);
 });
 
@@ -47,7 +47,7 @@ it("flatMap should not stack overflow", async () => {
       })
     );
   }
-  const result = await a.runAsPromiseResult();
+  const result = await a.runResult();
   expect(result).toEqual(100001);
 });
 
@@ -60,8 +60,9 @@ it("orElse should not stack overflow", async () => {
       a = a.orElse(Task<number, never>(async () => Left(10001)));
     }
   }
-  const { result, error, failure } = await a.runAsPromise({});
-  expect(result).toEqual(10001);
+  const { tag, value } = await a.run({});
+  expect(tag).toBe("success");
+  expect(value).toEqual(10001);
 });
 
 it("group should not stack overflow", async () => {
@@ -71,7 +72,7 @@ it("group should not stack overflow", async () => {
       .group(Task(async () => Right(i)))
       .map(([x, y]: any) => (Array.isArray(x) ? [...x, y] : [x, y]));
   }
-  const result = await a.runAsPromiseResult();
+  const result = await a.runResult();
   expect(result.length).toEqual(10001);
   expect(result[10000]).toEqual(9999);
 });
@@ -81,7 +82,7 @@ it("all should not stack overflow", async () => {
   for (let i = 0; i < 10000; i += 1) {
     as.push(Task(async () => Right(i)));
   }
-  const result = await all(as).runAsPromiseResult();
+  const result = await all(as).runResult();
   expect(result.length).toEqual(10000);
   expect(result[9999]).toEqual(9999);
 });
@@ -91,7 +92,7 @@ it("all should not stack overflow - concurrency limit", async () => {
   for (let i = 0; i < 10000; i += 1) {
     as.push(Task(async () => Right(i)));
   }
-  const result = await all(as, 100).runAsPromiseResult();
+  const result = await all(as, 100).runResult();
   expect(result.length).toEqual(10000);
   expect(result[9999]).toEqual(9999);
 });
@@ -102,7 +103,7 @@ it("should flatMap faster than promises", async () => {
     return resolve({}).flatMap(() => ar(n - 1));
   }
   const p1 = performance.now();
-  await ar(1000000).runAsPromise({});
+  await ar(1000000).run({});
   const p2 = performance.now();
   function p(n: number): any {
     if (n < 1) return Promise.resolve();
@@ -122,7 +123,7 @@ it("should map faster than promises", async () => {
     a = a.map((c: number) => c + 1);
   }
   const p1 = performance.now();
-  await a.runAsPromise();
+  await a.run();
   const p2 = performance.now();
   let b = Promise.resolve(1);
   for (let i = 0; i < 1000000; i += 1) {

@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-redeclare */
 import { Either } from "../either";
 import { Operation, Ops } from "./internal/operations";
-import { runAsPromiseResult } from "./internal/runAsPromiseResult";
+import { runResult } from "./internal/runResult";
 import { runner } from "./internal/runner";
 import { Stack } from "./internal/stack";
 // import { as } from "./combinators";
@@ -81,20 +81,28 @@ export interface Task<E, R> {
   /**
    * Executes this Task, returning a promise with an object of the outcomes.
    */
-  runAsPromise: () => Promise<{
-    hasError: boolean;
-    error: E;
-    result: R;
-    failure?: unknown;
-  }>;
+  run: () => Promise<
+    | {
+        tag: "success";
+        value: R;
+      }
+    | {
+        tag: "failure";
+        value: unknown;
+      }
+    | {
+        tag: "error";
+        value: E;
+      }
+  >;
   /**
-   * Unsafely executes this Task, returning a promise with the result or throwing an Error with an object of type `{ tag: 'error' | 'failure' , value: E | Error }` in an error or exception case.
+   * Unsafely executes this Task, returning a promise with the result or throwing an Error with an object of type `{ tag: 'error' , value: E } | { tag: 'failure', value: unknown }` in an error or exception case.
    */
-  runAsPromiseResult: () => Promise<R>;
+  runResult: () => Promise<R>;
   /**
    * Executes this Task with the given handler functions, returning a cancel function.
    */
-  run: <R2, E2, F>(
+  runF: <R2, E2, F>(
     mapResult: (_: R) => R2,
     mapError: (_: E) => E2,
     handleFailure?: (_: unknown) => F
@@ -427,30 +435,30 @@ class InternalTask<E, R> {
       ) as Task<E | E2, R2>;
   }
 
-  async runAsPromiseResult() {
+  async runResult() {
     const r = runner(this.operations);
-    return runAsPromiseResult(r);
+    return runResult(r);
   }
 
-  run<R21, E2, F>(
+  runF<R21, E2, F>(
     mapResult: (_: R) => R21,
     mapError: (_: E) => E2,
     handleFailure?: (_: unknown) => F
   ) {
     const _runner = runner(this.operations);
     setImmediate(() => {
-      _runner.run().then(({ hasError, error, result, failure }) => {
+      _runner.run().then((result) => {
         if (!_runner.cancelled()) {
-          if (failure) {
+          if (result.tag === "failure") {
             if (handleFailure) {
-              handleFailure(failure);
+              handleFailure(result.value);
             } else {
-              throw failure;
+              throw result.value;
             }
-          } else if (hasError) {
-            mapError(error);
+          } else if (result.tag === "error") {
+            mapError(result.value);
           } else {
-            mapResult(result);
+            mapResult(result.value);
           }
         }
       });
@@ -458,15 +466,22 @@ class InternalTask<E, R> {
     return () => _runner.cancel();
   }
 
-  async runAsPromise() {
-    const { hasError, failure, error, result } = await runner(
-      this.operations
-    ).run();
+  async run() {
+    const { tag, value } = await runner(this.operations).run();
+    if (tag === "failure") {
+      return {
+        tag: "failure" as const,
+        value: value,
+      };
+    } else if (tag === "error") {
+      return {
+        tag: "error" as const,
+        value: value as E,
+      };
+    }
     return {
-      result,
-      hasError,
-      error,
-      failure,
+      tag: "success" as const,
+      value: value as R,
     };
   }
 }
