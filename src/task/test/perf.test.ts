@@ -1,6 +1,6 @@
 import { performance } from "perf_hooks";
 import { all, Task, construct, constructTask, resolve } from "../index";
-import { Left, Right } from "../../either";
+import { left, right } from "../../either";
 
 it("should be stack safe - recursion case", () => {
   function a(n: number): Task<never, number> {
@@ -52,12 +52,12 @@ it("flatMap should not stack overflow", async () => {
 });
 
 it("orElse should not stack overflow", async () => {
-  let a: any = Task<number, never>(async () => Left(1));
+  let a: any = Task<number, never>(async () => left(1));
   for (let i = 0; i < 10000; i += 1) {
     if (i === 9999) {
-      a = a.orElse(Task<never, number>(async () => Right(10001)));
+      a = a.orElse(Task<never, number>(async () => right(10001)));
     } else {
-      a = a.orElse(Task<number, never>(async () => Left(10001)));
+      a = a.orElse(Task<number, never>(async () => left(10001)));
     }
   }
   const { tag, value } = await a.run({});
@@ -66,10 +66,10 @@ it("orElse should not stack overflow", async () => {
 });
 
 it("group should not stack overflow", async () => {
-  let a: any = Task(async () => Right(0));
+  let a: any = Task(async () => right(0));
   for (let i = 0; i < 10000; i += 1) {
     a = a
-      .group(Task(async () => Right(i)))
+      .group(Task(async () => right(i)))
       .map(([x, y]: any) => (Array.isArray(x) ? [...x, y] : [x, y]));
   }
   const result = await a.runResult();
@@ -80,7 +80,7 @@ it("group should not stack overflow", async () => {
 it("all should not stack overflow", async () => {
   const as = [];
   for (let i = 0; i < 10000; i += 1) {
-    as.push(Task(async () => Right(i)));
+    as.push(Task(async () => right(i)));
   }
   const result = await all(as).runResult();
   expect(result.length).toEqual(10000);
@@ -90,7 +90,7 @@ it("all should not stack overflow", async () => {
 it("all should not stack overflow - concurrency limit", async () => {
   const as = [];
   for (let i = 0; i < 10000; i += 1) {
-    as.push(Task(async () => Right(i)));
+    as.push(Task(async () => right(i)));
   }
   const result = await all(as, 100).runResult();
   expect(result.length).toEqual(10000);

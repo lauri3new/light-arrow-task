@@ -8,7 +8,7 @@ import {
   sequence,
 } from "../combinators";
 import { all, Task, construct, constructTask, race } from "../index";
-import { Right } from "../../either";
+import { right } from "../../either";
 import { sleep } from "./helpers";
 
 it("Task should orElse", async () => {
@@ -281,7 +281,7 @@ it("promise based Task should cancel subsequent operations", async () => {
   const cancel = Task<never, number>(async () => {
     await sleep(500);
     flag = true;
-    return Right(1);
+    return right(1);
   })
     .map((b) => {
       c = true;

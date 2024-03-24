@@ -1,6 +1,6 @@
 import { reject } from "../creators";
 import { Task, construct, constructTask, resolve } from "../index";
-import { Left, Right } from "../../either";
+import { left, right } from "../../either";
 import { sleep } from "./helpers";
 
 it("constructTask should map", async () => {
@@ -109,7 +109,7 @@ it("constructTask should orElse", async () => {
 
 it("constructTask should orElse", async () => {
   const a = constructTask<number, never>((_, rej) => rej(1)).orElse(
-    Task<number, never>(async () => Left(2))
+    Task<number, never>(async () => left(2))
   );
 
   const result = await a

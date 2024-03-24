@@ -1,4 +1,4 @@
-import { Right } from "../either/index";
+import { right } from "../either/index";
 import { all, Task, resolve } from "./index";
 
 /**
@@ -774,7 +774,7 @@ export function groupParallel(...as: Task<any, any>[]) {
 export const sequence = <D, E, R>(as: Task<E, R>[]): Task<E, R[]> =>
   as.reduce(
     (acc, TaskR) => acc.flatMap((a: any) => TaskR.map((c) => [...a, c])),
-    Task<E, R[]>(async () => Right<R[]>([]))
+    Task<E, R[]>(async () => right<R[]>([]))
   );
 
 /**

@@ -6,7 +6,7 @@ import {
   task,
 } from "../creators";
 import { Task, resolve } from "../index";
-import { Left, Right } from "../../either";
+import { left, right } from "../../either";
 
 it("task should Task", async () => {
   const result = await task(async ({ right }) => right(1)).run();
@@ -21,17 +21,17 @@ it("task should Task - left", async () => {
 });
 
 it("Task should Task - right", async () => {
-  const result = await Task<never, number>(async () => Right(1)).runResult();
+  const result = await Task<never, number>(async () => right(1)).runResult();
   expect(result).toEqual(1);
 });
 
 it("Task should fromEither - right", async () => {
-  const result = await fromEither<never, number>(Right(1)).runResult();
+  const result = await fromEither<never, number>(right(1)).runResult();
   expect(result).toEqual(1);
 });
 
 it("Task should fromEither - left", async () => {
-  const result = await fromEither<never, number>(Right(1)).runResult();
+  const result = await fromEither<never, number>(right(1)).runResult();
   expect(result).toEqual(1);
 });
 
