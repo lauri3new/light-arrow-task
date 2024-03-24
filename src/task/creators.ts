@@ -2,6 +2,22 @@ import { Either, Left, Right } from "../either/index";
 import { Task } from "./index";
 
 /**
+ * Create a task.
+ */
+export const task = <E, R>(
+  f: (_: {
+    left: <X>(__: X) => Left<X>;
+    right: <Y>(__: Y) => Right<Y>;
+  }) => Promise<Either<E, R>>
+): Task<E, R> =>
+  Task(() =>
+    f({
+      left: Left,
+      right: Right,
+    })
+  );
+
+/**
  * Create an Task from a value with the error type as the value type.
  */
 export const reject = <E>(a: E): Task<E, never> => Task(async () => Left(a));

@@ -1,8 +1,26 @@
-import { convertAsync, fromEither, fromNullable, reject } from "../creators";
+import {
+  convertAsync,
+  fromEither,
+  fromNullable,
+  reject,
+  task,
+} from "../creators";
 import { Task, resolve } from "../index";
 import { Left, Right } from "../../either";
 
-it("Task should Task", async () => {
+it("task should Task", async () => {
+  const result = await task(async ({ right }) => right(1)).run();
+  expect(result.value).toEqual(1);
+  expect(result.tag).toEqual("success");
+});
+
+it("task should Task - left", async () => {
+  const result = await task(async ({ left }) => left(1)).run();
+  expect(result.value).toEqual(1);
+  expect(result.tag).toEqual("error");
+});
+
+it("Task should Task - right", async () => {
   const result = await Task<never, number>(async () => Right(1)).runResult();
   expect(result).toEqual(1);
 });
