@@ -12,8 +12,8 @@
   ],
   "types": "dist/index.d.ts",
   "scripts": {
-    "test": "jest --verbose --env=node",
-    "test:dev": "jest --verbose --env=node --watchAll",
+    "test": "npx jest --verbose --env=node",
+    "test:dev": "npx jest --verbose --env=node --watchAll",
     "build": "npx tsc",
     "lint": "npx eslint --fix './src/**/*'",
     "prepublishOnly": "npm test && npm run build"
