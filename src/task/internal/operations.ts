@@ -1,5 +1,5 @@
-import { Either } from "../../either/index";
-import { Task } from "../index";
+import { Either } from '../../either/index'
+import { Task } from '../index'
 
 export enum Ops {
   map = 1,

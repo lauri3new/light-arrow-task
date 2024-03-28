@@ -1,24 +1,26 @@
 /* eslint-disable no-await-in-loop */
-import { Runner } from "./runner";
+import { Runner } from './runner'
 
 export const worker = async (iterator: IterableIterator<[number, Runner]>) => {
-  const out = [];
+  const out = []
   for (const [index, runner] of iterator) {
-    const { hasError, error, failure, result } = await runner.run();
+    const {
+      hasError, error, failure, result
+    } = await runner.run()
     if (hasError) {
       // eslint-disable-next-line no-throw-literal
       throw {
-        tag: "error",
-        value: error,
-      };
+        tag: 'error',
+        value: error
+      }
     } else if (failure) {
       // eslint-disable-next-line no-throw-literal
       throw {
-        tag: "failure",
-        value: failure,
-      };
+        tag: 'failure',
+        value: failure
+      }
     }
-    out.push(result);
+    out.push(result)
   }
-  return out;
-};
+  return out
+}

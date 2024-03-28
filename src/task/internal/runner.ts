@@ -1,266 +1,266 @@
 /* eslint-disable no-await-in-loop, no-loop-func, no-unused-expressions */
-import { Operation, Ops, Runnable } from "./operations";
-import { runAsPromiseResult } from "./runAsPromiseResult";
-import { Stack } from "./stack";
-import { worker } from "./worker";
+import { Operation, Ops, Runnable } from './operations'
+import { runAsPromiseResult } from './runAsPromiseResult'
+import { Stack } from './stack'
+import { worker } from './worker'
 
 export function runner(operations: Stack<Operation>) {
-  const stack = operations.toArray();
-  let cancellables: any[] = [];
-  let cancelled = false;
-  let result: any;
-  let x: any;
-  let isLeft: boolean = false;
-  let error: any;
+  const stack = operations.toArray()
+  let cancellables: any[] = []
+  let cancelled = false
+  let result: any
+  let x: any
+  let isLeft: boolean = false
+  let error: any
 
   const matchError = (e: any) => {
-    isLeft = true;
-    error = e;
-  };
+    isLeft = true
+    error = e
+  }
   const matchResult = (r: any) => {
-    result = r;
-  };
+    result = r
+  }
   const resetError = () => {
-    isLeft = false;
-    error = undefined;
-  };
+    isLeft = false
+    error = undefined
+  }
   const matchGroupResult = (r: any) => {
-    result = [result, r];
-  };
+    result = [result, r]
+  }
 
-  const noChange = () => {};
+  const noChange = () => {}
   const _run = (op: Runnable) => {
     switch (op._tag) {
       case Ops.promiseBased: {
         return op.f().then((x) => {
-          x.match(matchError, matchResult);
-        });
+          x.fold(matchError, matchResult)
+        })
       }
       case Ops.construct: {
         return new Promise<void>((res) => {
-          let pending = true;
+          let pending = true
           const resolve = (a: any) => {
-            result = a;
-            pending = false;
-          };
+            result = a
+            pending = false
+          }
           const reject = (a: any) => {
-            isLeft = true;
-            error = a;
-            pending = false;
-          };
-          const cancel = op.f()(resolve, reject);
+            isLeft = true
+            error = a
+            pending = false
+          }
+          const cancel = op.f()(resolve, reject)
           const check = () => {
             if (cancelled) {
-              pending = false;
-              cancel && cancel();
+              pending = false
+              cancel && cancel()
             }
             if (!pending) {
-              res();
+              res()
             }
             if (pending) {
               setImmediate(() => {
-                check();
-              });
+                check()
+              })
             }
-          };
-          check();
-        });
+          }
+          check()
+        })
       }
     }
-  };
+  }
 
   return {
     cancelled: () => cancelled,
     cancel: () => {
-      cancelled = true;
+      cancelled = true
     },
     async run() {
       while (stack.length) {
-        const op = stack.pop();
+        const op = stack.pop()
         if (this.cancelled() || !op) {
           return {
             hasError: false,
             failure: undefined,
             error,
-            result,
-          };
+            result
+          }
         }
         try {
           if (isLeft) {
             switch (op._tag) {
               case Ops.leftMap: {
                 if (isLeft) {
-                  error = op.f(error);
+                  error = op.f(error)
                 }
-                break;
+                break
               }
               case Ops.leftFlatMap: {
-                x = op.f(error);
-                x = await op.f(error).runAsPromise();
-                error = x.result;
-                break;
+                x = op.f(error)
+                x = await op.f(error).runAsPromise()
+                error = x.result
+                break
               }
               case Ops.orElse: {
-                resetError();
-                if (typeof op.f === "function") {
-                  x = await op.f();
-                  x.match(matchError, matchResult);
+                resetError()
+                if (typeof op.f === 'function') {
+                  x = await op.f()
+                  x.fold(matchError, matchResult)
                 } else {
-                  stack.push(...op.f.__ops.toArray());
+                  stack.push(...op.f.__ops.toArray())
                 }
-                break;
+                break
               }
               case Ops.ifOrElse: {
                 if (op.f[0](error)) {
-                  resetError();
-                  stack.push(...op.f[1].__ops.toArray());
+                  resetError()
+                  stack.push(...op.f[1].__ops.toArray())
                 }
-                break;
+                break
               }
             }
           } else {
             switch (op._tag) {
               case Ops.construct: {
-                await _run(op);
-                break;
+                await _run(op)
+                break
               }
               case Ops.bracket: {
-                x = op.f[1](result);
-                x = await x.runAsPromise();
-                const a = op.f[0](result);
-                await a.runAsPromise();
+                x = op.f[1](result)
+                x = await x.runAsPromise()
+                const a = op.f[0](result)
+                await a.runAsPromise()
                 if (x.failure) {
-                  throw x.failure;
+                  throw x.failure
                 }
                 if (x.error) {
-                  matchError(x.error);
+                  matchError(x.error)
                 } else {
-                  matchResult(x.result);
+                  matchResult(x.result)
                 }
-                break;
+                break
               }
               case Ops.all:
                 try {
                   if (op.concurrencyLimit) {
-                    const limit =
-                      op.f.length > op.concurrencyLimit
-                        ? op.concurrencyLimit
-                        : op.f.length;
+                    const limit = op.f.length > op.concurrencyLimit
+                      ? op.concurrencyLimit
+                      : op.f.length
                     const entries = op.f
                       .map((_f) => {
-                        const _runner = runner(_f.__ops);
-                        cancellables.push(_runner.cancel);
-                        return _runner;
+                        const _runner = runner(_f.__ops)
+                        cancellables.push(_runner.cancel)
+                        return _runner
                       })
-                      .entries();
+                      .entries()
                     result = await Promise.all(
                       new Array(limit).fill(entries).map(worker)
-                    ).then((array) => array.flat());
+                    ).then((array) => array.flat())
                   } else {
                     result = await Promise.all(
                       op.f.map(async (_f) => {
-                        const a = runner(_f.__ops);
-                        cancellables.push(a.cancel);
-                        return runAsPromiseResult(a);
+                        const a = runner(_f.__ops)
+                        cancellables.push(a.cancel)
+                        return runAsPromiseResult(a)
                       })
-                    );
-                    cancellables = [];
+                    )
+                    cancellables = []
                   }
                 } catch (e: any) {
                   while (cancellables[0]) {
-                    cancellables.pop()();
+                    cancellables.pop()()
                   }
-                  if (e?.tag === "error") {
-                    matchError(e?.value);
+                  if (e?.tag === 'error') {
+                    matchError(e?.value)
                   } else {
-                    throw e?.value;
+                    // eslint-disable-next-line no-throw-literal
+                    throw e?.value
                   }
                 }
-                break;
+                break
               case Ops.race:
                 result = await Promise.race(
                   op.f.map((_f) => _f.runAsPromiseResult())
-                );
-                break;
+                )
+                break
               case Ops.andThen: {
-                if (typeof op.f === "function") {
-                  x = await op.f(result);
-                  x.match(matchError, matchResult);
+                if (typeof op.f === 'function') {
+                  x = await op.f(result)
+                  x.fold(matchError, matchResult)
                 } else {
-                  x = await op.f.runAsPromise();
+                  x = await op.f.runAsPromise()
                   if (x.failure) {
-                    throw x.failure;
+                    throw x.failure
                   }
                   if (x.error) {
-                    matchError(x.error);
+                    matchError(x.error)
                   } else {
-                    matchResult(x.result);
+                    matchResult(x.result)
                   }
                 }
-                break;
+                break
               }
               case Ops.group: {
-                if (typeof op.f === "function") {
-                  x = await op.f();
-                  x.match(matchError, matchGroupResult);
+                if (typeof op.f === 'function') {
+                  x = await op.f()
+                  x.fold(matchError, matchGroupResult)
                 } else {
-                  x = await op.f.runAsPromise();
+                  x = await op.f.runAsPromise()
                   if (x.failure) {
-                    throw x.failure;
+                    throw x.failure
                   }
                   if (x.error) {
-                    matchError(x.error);
+                    matchError(x.error)
                   } else {
-                    matchResult([result, x.result]);
+                    matchResult([result, x.result])
                   }
                 }
-                break;
+                break
               }
               case Ops.groupFirst: {
-                if (typeof op.f === "function") {
-                  x = await op.f();
-                  x.match(matchError, noChange);
+                if (typeof op.f === 'function') {
+                  x = await op.f()
+                  x.fold(matchError, noChange)
                 } else {
-                  x = await op.f.runAsPromise();
+                  x = await op.f.runAsPromise()
                   if (x.failure) {
-                    throw x.failure;
+                    throw x.failure
                   }
                   if (x.error) {
-                    matchError(x.error);
+                    matchError(x.error)
                   }
                 }
-                break;
+                break
               }
               case Ops.groupSecond: {
-                if (typeof op.f === "function") {
-                  x = await op.f();
-                  x.match(matchError, matchResult);
+                if (typeof op.f === 'function') {
+                  x = await op.f()
+                  x.fold(matchError, matchResult)
                 } else {
-                  stack.push(...op.f.__ops.toArray());
+                  stack.push(...op.f.__ops.toArray())
                 }
-                break;
+                break
               }
               case Ops.flatMap: {
-                x = op.f(result);
-                if (typeof x === "function") {
-                  x = await x();
-                  x.match(matchError, matchResult);
+                x = op.f(result)
+                if (typeof x === 'function') {
+                  x = await x()
+                  x.fold(matchError, matchResult)
                 } else {
-                  stack.push(...x.__ops.toArray());
+                  stack.push(...x.__ops.toArray())
                 }
-                break;
+                break
               }
               case Ops.map: {
-                result = op.f(result);
-                break;
+                result = op.f(result)
+                break
               }
               case Ops.promiseBased: {
-                await _run(op);
-                break;
+                await _run(op)
+                break
               }
               case Ops.value: {
-                result = op.f;
-                break;
+                result = op.f
+                break
               }
             }
           }
@@ -269,17 +269,17 @@ export function runner(operations: Stack<Operation>) {
             hasError: isLeft,
             failure: e,
             error,
-            result,
-          };
+            result
+          }
         }
       }
       return {
         hasError: isLeft,
         error,
-        result,
-      };
-    },
-  };
+        result
+      }
+    }
+  }
 }
 
 export type Runner = ReturnType<typeof runner>;

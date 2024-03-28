@@ -1,9 +1,9 @@
 /* eslint-disable @typescript-eslint/no-redeclare */
-import { Either } from "../either";
-import { Operation, Ops } from "./internal/operations";
-import { runAsPromiseResult } from "./internal/runAsPromiseResult";
-import { runner } from "./internal/runner";
-import { Stack } from "./internal/stack";
+import { Either } from '../either'
+import { Operation, Ops } from './internal/operations'
+import { runAsPromiseResult } from './internal/runAsPromiseResult'
+import { runner } from './internal/runner'
+import { Stack } from './internal/stack'
 // import { as } from "./combinators";
 
 /**
@@ -129,7 +129,7 @@ class InternalTask<E, R> {
   private operations: Stack<Operation>;
 
   public get __ops(): Stack<Operation> {
-    return this.operations;
+    return this.operations
   }
 
   static all<E, R>(f: Task<E, R>[], concurrencyLimit?: number): Task<E, R[]> {
@@ -138,9 +138,9 @@ class InternalTask<E, R> {
       new Stack({
         _tag: Ops.all,
         f,
-        concurrencyLimit,
+        concurrencyLimit
       })
-    ) as Task<E, R[]>;
+    ) as Task<E, R[]>
   }
 
   static race<D, E, R>(f: Task<E, R>[]): Task<E, R> {
@@ -148,13 +148,13 @@ class InternalTask<E, R> {
       undefined,
       new Stack({
         _tag: Ops.race,
-        f,
+        f
       })
-    ) as Task<E, R>;
+    ) as Task<E, R>
   }
 
   static of<D, E, R>(f: () => Promise<Either<E, R>>): Task<E, R> {
-    return new InternalTask(f) as Task<E, R>;
+    return new InternalTask(f) as Task<E, R>
   }
 
   static resolve<R, D = {}>(f: R): Task<never, R> {
@@ -162,9 +162,9 @@ class InternalTask<E, R> {
       undefined,
       new Stack({
         _tag: Ops.value,
-        f,
+        f
       })
-    ) as any;
+    ) as any
   }
 
   // TODO: reader D
@@ -178,21 +178,20 @@ class InternalTask<E, R> {
       undefined,
       new Stack({
         _tag: Ops.construct,
-        f,
+        f
       })
-    ) as Task<E, R>;
+    ) as Task<E, R>
   }
 
   private constructor(
     f?: () => Promise<Either<E, R>>,
     initialOps?: Stack<Operation>
   ) {
-    this.operations =
-      initialOps ||
-      new Stack<{ _tag: Ops; f: any }>({
+    this.operations = initialOps
+      || new Stack<{ _tag: Ops; f: any }>({
         _tag: Ops.promiseBased,
-        f,
-      });
+        f
+      })
   }
 
   tap(f: (_: R) => void): Task<E, R> {
@@ -201,11 +200,11 @@ class InternalTask<E, R> {
       this.operations.prepend({
         _tag: Ops.map,
         f: (r) => {
-          f(r);
-          return r;
-        },
+          f(r)
+          return r
+        }
       })
-    ) as Task<E, R>;
+    ) as Task<E, R>
   }
 
   map<R2>(f: (_: R) => R2): Task<E, R2> {
@@ -214,17 +213,17 @@ class InternalTask<E, R> {
         undefined,
         new Stack({
           _tag: Ops.value,
-          f: f(this.operations.head?.val?.f),
+          f: f(this.operations.head?.val?.f)
         })
-      ) as Task<E, R2>;
+      ) as Task<E, R2>
     }
     return new InternalTask<E, R2>(
       undefined,
       this.operations.prepend({
         _tag: Ops.map,
-        f,
+        f
       })
-    ) as Task<E, R2>;
+    ) as Task<E, R2>
   }
 
   biMap<E2, R2>(f: (_: E) => E2, g: (_: R) => R2): Task<E2, R2> {
@@ -233,13 +232,13 @@ class InternalTask<E, R> {
       this.operations
         .prepend({
           _tag: Ops.map,
-          f: g,
+          f: g
         })
         .prepend({
           _tag: Ops.leftMap,
-          f,
+          f
         })
-    ) as Task<E2, R2>;
+    ) as Task<E2, R2>
   }
 
   leftMap<E2>(f: (_: E) => E2): Task<E2, R> {
@@ -247,9 +246,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.leftMap,
-        f,
+        f
       })
-    ) as Task<E2, R>;
+    ) as Task<E2, R>
   }
 
   flatMap<E2, R2>(f: (_: R) => Task<E2, R2>): Task<E | E2, R2> {
@@ -257,9 +256,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.flatMap,
-        f,
+        f
       })
-    ) as Task<E | E2, R2>;
+    ) as Task<E | E2, R2>
   }
 
   flatMapIf<E2, R2>(
@@ -271,14 +270,14 @@ class InternalTask<E, R> {
         undefined,
         this.operations.prepend({
           _tag: Ops.flatMap,
-          f,
+          f
         })
-      ) as Task<E | E2, R | R2>;
+      ) as Task<E | E2, R | R2>
     }
     return new InternalTask<E | E2, R | R2>(undefined, this.operations) as Task<
       E | E2,
       R | R2
-    >;
+    >
   }
 
   leftFlatMap<E2>(f: (_: E) => Task<never, E2>): Task<E2, R> {
@@ -286,9 +285,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.leftFlatMap,
-        f,
+        f
       })
-    ) as Task<E2, R>;
+    ) as Task<E2, R>
   }
 
   race<E, R>(f: Task<E, R>): Task<E, R> {
@@ -296,9 +295,9 @@ class InternalTask<E, R> {
       undefined,
       new Stack({
         _tag: Ops.race,
-        f: [this, f],
+        f: [this, f]
       })
-    ) as Task<E, R>;
+    ) as Task<E, R>
   }
 
   groupParallel<E2, R2>(f: Task<E2, R2>): Task<E | E2, [R, R2]> {
@@ -306,9 +305,9 @@ class InternalTask<E, R> {
       undefined,
       new Stack({
         _tag: Ops.all,
-        f: [this, f],
+        f: [this, f]
       })
-    ) as Task<E | E2, [R, R2]>;
+    ) as Task<E | E2, [R, R2]>
   }
 
   flatMapF<E2, R2>(
@@ -318,9 +317,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.flatMap,
-        f: f as any,
+        f: f as any
       })
-    ) as Task<E | E2, R2>;
+    ) as Task<E | E2, R2>
   }
 
   orElse<E2, R2>(f: Task<E2, R2>): Task<E2, R | R2> {
@@ -328,9 +327,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.orElse,
-        f,
+        f
       })
-    ) as Task<E2, R | R2>;
+    ) as Task<E2, R | R2>
   }
 
   ifOrElse<E2, R2>(
@@ -341,9 +340,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.ifOrElse,
-        f: [predicate, f],
+        f: [predicate, f]
       })
-    ) as Task<E | E2, R | R2>;
+    ) as Task<E | E2, R | R2>
   }
 
   orElseF<E2, R2>(f: () => Promise<Either<E2, R2>>): Task<E2, R | R2> {
@@ -351,9 +350,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.orElse,
-        f,
+        f
       })
-    ) as Task<E2, R | R2>;
+    ) as Task<E2, R | R2>
   }
 
   group<E2, R2>(f: Task<E2, R2>): Task<E | E2, [R, R2]> {
@@ -361,9 +360,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.group,
-        f,
+        f
       })
-    ) as Task<E | E2, [R, R2]>;
+    ) as Task<E | E2, [R, R2]>
   }
 
   groupF<E2, R2>(f: () => Promise<Either<E2, R2>>): Task<E | E2, [R, R2]> {
@@ -371,9 +370,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.group,
-        f,
+        f
       })
-    ) as Task<E | E2, [R, R2]>;
+    ) as Task<E | E2, [R, R2]>
   }
 
   groupFirst<E2, R2>(f: Task<E2, R2>): Task<E | E2, R> {
@@ -381,9 +380,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.groupFirst,
-        f,
+        f
       })
-    ) as Task<E | E2, R>;
+    ) as Task<E | E2, R>
   }
 
   groupFirstF<E2, R2>(f: () => Promise<Either<E2, R2>>): Task<E2, R> {
@@ -391,9 +390,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.groupFirst,
-        f,
+        f
       })
-    ) as Task<E2, R>;
+    ) as Task<E2, R>
   }
 
   groupSecond<E2, R2>(f: Task<E2, R2>): Task<E2, R2> {
@@ -401,9 +400,9 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.groupSecond,
-        f,
+        f
       })
-    ) as Task<E2, R2>;
+    ) as Task<E2, R2>
   }
 
   groupSecondF<E2, R2>(f: () => Promise<Either<E2, R2>>): Task<E2, R2> {
@@ -411,25 +410,24 @@ class InternalTask<E, R> {
       undefined,
       this.operations.prepend({
         _tag: Ops.groupSecond,
-        f,
+        f
       })
-    ) as Task<E2, R2>;
+    ) as Task<E2, R2>
   }
 
   bracket(f: (_: R) => Task<never, any>) {
-    return <E2, R2>(g: (_: R) => Task<E2, R2>): Task<E | E2, R2> =>
-      new InternalTask<E2, R2>(
-        undefined,
-        this.operations.prepend({
-          _tag: Ops.bracket,
-          f: [f, g],
-        })
-      ) as Task<E | E2, R2>;
+    return <E2, R2>(g: (_: R) => Task<E2, R2>): Task<E | E2, R2> => new InternalTask<E2, R2>(
+      undefined,
+      this.operations.prepend({
+        _tag: Ops.bracket,
+        f: [f, g]
+      })
+    ) as Task<E | E2, R2>
   }
 
   async runAsPromiseResult() {
-    const r = runner(this.operations);
-    return runAsPromiseResult(r);
+    const r = runner(this.operations)
+    return runAsPromiseResult(r)
   }
 
   run<R21, E2, F>(
@@ -437,42 +435,45 @@ class InternalTask<E, R> {
     mapError: (_: E) => E2,
     handleFailure?: (_: unknown) => F
   ) {
-    const _runner = runner(this.operations);
+    const _runner = runner(this.operations)
     setImmediate(() => {
-      _runner.run().then(({ hasError, error, result, failure }) => {
+      _runner.run().then(({
+        hasError, error, result, failure
+      }) => {
         if (!_runner.cancelled()) {
           if (failure) {
             if (handleFailure) {
-              handleFailure(failure);
+              handleFailure(failure)
             } else {
-              throw failure;
+              throw failure
             }
           } else if (hasError) {
-            mapError(error);
+            mapError(error)
           } else {
-            mapResult(result);
+            mapResult(result)
           }
         }
-      });
-    });
-    return () => _runner.cancel();
+      })
+    })
+    return () => _runner.cancel()
   }
 
   async runAsPromise() {
-    const { hasError, failure, error, result } = await runner(
+    const {
+      hasError, failure, error, result
+    } = await runner(
       this.operations
-    ).run();
+    ).run()
     return {
       result,
       hasError,
       error,
-      failure,
-    };
+      failure
+    }
   }
 }
 
-export const Task = <E, R>(f: () => Promise<Either<E, R>>): Task<E, R> =>
-  InternalTask.of(f);
+export const Task = <E, R>(f: () => Promise<Either<E, R>>): Task<E, R> => InternalTask.of(f)
 
 /**
  * Similiar to `Promise.all`, returns an Task where all operations will be run in parallel returning an array of R values. Optional a concurrency limit can be specified.
@@ -480,17 +481,17 @@ export const Task = <E, R>(f: () => Promise<Either<E, R>>): Task<E, R> =>
 export const all = <E, R>(
   f: Task<E, R>[],
   concurrencyLimit?: number
-): Task<E, R[]> => InternalTask.all(f, concurrencyLimit);
+): Task<E, R[]> => InternalTask.all(f, concurrencyLimit)
 
 /**
  * Similiar to `Promise.race`, returns an Task where the R value from the first succesful operation will be returned.
  */
-export const race = <E, R>(f: Task<E, R>[]): Task<E, R> => InternalTask.race(f);
+export const race = <E, R>(f: Task<E, R>[]): Task<E, R> => InternalTask.race(f)
 
 /**
  * Resolve an Task with the specified value.
  */
-export const resolve = <R>(a: R): Task<never, R> => InternalTask.resolve(a);
+export const resolve = <R>(a: R): Task<never, R> => InternalTask.resolve(a)
 
 /**
  * Similiar to `new Promise`, an optional 'tidy up' function can be returned to tidy up resources upon cancellation.
@@ -500,7 +501,7 @@ export const construct = <E, R>(
     resolve: (_: R) => void,
     reject: (_: E) => void
   ) => void | (() => void)
-): Task<E, R> => InternalTask.construct(f);
+): Task<E, R> => InternalTask.construct(f)
 
 // TODO: make constructTask more efficient in runner
 
@@ -509,4 +510,4 @@ export const construct = <E, R>(
  */
 export const constructTask = <E, R>(
   f: (resolve: (_: R) => void, reject: (_: E) => void) => void | (() => void)
-): Task<E, R> => InternalTask.construct(() => f);
+): Task<E, R> => InternalTask.construct(() => f)

@@ -1,4 +1,4 @@
-import { Task } from "./index";
+import { Task } from './index'
 
 /**
  * Extract the result (Right) type of the given Arrow type.
