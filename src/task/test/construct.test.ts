@@ -149,9 +149,9 @@ it('constructTask should bracket - fail case', async () => {
   expect(error).toEqual(10)
 })
 
-it('constructTask should run - success', async (cb) => {
+it('constructTask should run - success', (cb: () => void) => {
   const a = construct<never, number>(() => (res) => res(2))
-  const result = await a.run(
+  const result = a.run(
     (result) => {
       expect(result).toEqual(2)
       cb()
@@ -161,7 +161,7 @@ it('constructTask should run - success', async (cb) => {
   )
 })
 
-it('constructTask should run - error', async (cb) => {
+it('constructTask should run - error', (cb: () => void) => {
   const a = construct<number, never>(() => (_, rej) => rej(2))
   const result = a.run(
     (result) => {},
@@ -173,7 +173,7 @@ it('constructTask should run - error', async (cb) => {
   )
 })
 
-it('constructTask should run - failure', async (cb) => {
+it('constructTask should run - failure', (cb: () => void) => {
   const a = construct<any, never>(() => (_, rej) => {
     throw new Error('boom')
   })
@@ -187,7 +187,7 @@ it('constructTask should run - failure', async (cb) => {
   )
 })
 
-it('constructTask should run - context', async (cb) => {
+it('constructTask should run - context', (cb: () => void) => {
   const a = construct<never, number>(() => (res) => res(2))
   const result = a.run(
     (result) => {
@@ -199,12 +199,12 @@ it('constructTask should run - context', async (cb) => {
   )
 })
 
-it('constructTask should run no cancel', async (cb) => {
+it('constructTask should run no cancel', (cb: () => void) => {
   let res = 0
   const a = construct<never, number>(() => (res) => {
     sleep(100).then(() => res(2))
   })
-  const cancel = await a.run(
+  const cancel = a.run(
     (result) => {
       res = result
       expect(result).toEqual(2)
@@ -212,8 +212,6 @@ it('constructTask should run no cancel', async (cb) => {
     },
     (error) => {}
   )
-  await sleep(200)
-  expect(res).toEqual(2)
 })
 
 it('constructTask should run and cancel', async () => {

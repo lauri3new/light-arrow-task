@@ -222,9 +222,9 @@ it('Task should bracket - fail case', async () => {
   expect(error).toEqual(10)
 })
 
-it('Task should run - success', async (cb) => {
+it('Task should run - success', (cb: () => void) => {
   const a = Task<never, number>(async () => right(5))
-  const result = await a.run(
+  const result = a.run(
     (result) => {
       expect(result).toEqual(5)
       cb()
@@ -234,7 +234,7 @@ it('Task should run - success', async (cb) => {
   )
 })
 
-it('Task should run - error', async (cb) => {
+it('Task should run - error', (cb: () => void) => {
   const a = Task<number, never>(async () => left(5))
 
   const result = a.run(
@@ -247,7 +247,7 @@ it('Task should run - error', async (cb) => {
   )
 })
 
-it('Task should run - failure', async (cb) => {
+it('Task should run - failure', (cb: () => void) => {
   const a = Task<number, never>(async () => {
     throw new Error('boom')
   })
@@ -261,13 +261,13 @@ it('Task should run - failure', async (cb) => {
   )
 })
 
-it('Task should run no cancel', async (cb) => {
+it('Task should run no cancel', (cb: () => void) => {
   let res = 0
   const a = Task<never, number>(async () => {
     await sleep(100)
     return right(5)
   })
-  const cancel = await a.run(
+  const cancel = a.run(
     (result) => {
       res = result
       expect(result).toEqual(5)
@@ -275,8 +275,6 @@ it('Task should run no cancel', async (cb) => {
     },
     (error) => {}
   )
-  await sleep(200)
-  expect(res).toEqual(5)
 })
 
 it('Task should run and cancel', async () => {
