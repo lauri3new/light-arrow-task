@@ -4,8 +4,8 @@
 </div>
 
 <p align="center">
-<img alt="npm" src="https://img.shields.io/npm/v/@light-Task/Task?color=g">
-<img alt="GitHub Workflow Status" src="https://img.shields.io/github/workflow/status/lauri3new/light-Task/Node.js%20CI">
+<img alt="npm" src="https://img.shields.io/npm/v/@light-arrow/task?color=g">
+<img alt="GitHub Workflow Status" src="https://img.shields.io/github/lauri3new/light-arrow-task/workflows/tests/badge.svg">
 </p>
 
 ## About
