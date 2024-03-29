@@ -21,6 +21,7 @@
   "author": "Laurence Newman",
   "license": "ISC",
   "devDependencies": {
+    "@types/jest": "^29.5.12",
     "@typescript-eslint/eslint-plugin": "^4.6.0",
     "@typescript-eslint/parser": "^4.6.0",
     "eslint": "^6.8.0",
