@@ -2,20 +2,14 @@ import { Runner } from './runner'
 
 export async function runAsPromiseResult(a: Runner) {
   const {
-    hasError, error, failure, result
+    tag, value
   } = await a.run()
-  if (hasError) {
+  if (tag === 'error' || tag === 'failure') {
     // eslint-disable-next-line no-throw-literal
     throw {
-      tag: 'error',
-      value: error
-    }
-  } else if (failure) {
-    // eslint-disable-next-line no-throw-literal
-    throw {
-      tag: 'failure',
-      value: failure
+      tag,
+      value
     }
   }
-  return result
+  return value
 }

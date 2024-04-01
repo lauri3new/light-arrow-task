@@ -82,10 +82,14 @@ export interface Task<E, R> {
    * Executes this Task, returning a promise with an object of the outcomes.
    */
   runAsPromise: () => Promise<{
-    hasError: boolean;
-    error: E;
-    result: R;
-    failure?: unknown;
+    tag: 'failure'
+    value: unknown
+  } | {
+    tag: 'error'
+    value: E
+  } | {
+    tag: 'result'
+    value: R
   }>;
   /**
    * Unsafely executes this Task, returning a promise with the result or throwing an Error with an object of type `{ tag: 'error' | 'failure' , value: E | Error }` in an error or exception case.
@@ -438,19 +442,19 @@ class InternalTask<E, R> {
     const _runner = runner(this.operations)
     setImmediate(() => {
       _runner.run().then(({
-        hasError, error, result, failure
+        tag, value
       }) => {
         if (!_runner.cancelled()) {
-          if (failure) {
+          if (tag === 'failure') {
             if (handleFailure) {
-              handleFailure(failure)
+              handleFailure(value)
             } else {
-              throw failure
+              throw value
             }
-          } else if (hasError) {
-            mapError(error)
+          } else if (tag === 'error') {
+            mapError(value)
           } else {
-            mapResult(result)
+            mapResult(value)
           }
         }
       })
@@ -460,15 +464,13 @@ class InternalTask<E, R> {
 
   async runAsPromise() {
     const {
-      hasError, failure, error, result
+      tag, value
     } = await runner(
       this.operations
     ).run()
     return {
-      result,
-      hasError,
-      error,
-      failure
+      tag,
+      value
     }
   }
 }

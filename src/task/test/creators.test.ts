@@ -1,5 +1,5 @@
 import {
-  convertAsync, fromEither, fromNullable, reject
+  convertAsync, fromEither, fromNullable, reject, task
 } from '../creators'
 import { Task, resolve } from '../index'
 import { right } from '../../either'
@@ -20,37 +20,37 @@ it('Task should fromEither - left', async () => {
 })
 
 it('Task should fromNullable - null', async () => {
-  const { result, error } = await fromNullable<number>(null)
+  const { tag, value } = await fromNullable<number>(null)
     .map((a: number) => a + 1)
     .leftMap((a) => 'its null')
     .runAsPromise()
-  expect(result).toEqual(undefined)
-  expect(error).toEqual('its null')
+  expect(tag).toEqual('error')
+  expect(value).toEqual('its null')
 })
 
 it('Task should fromNullable - non null', async () => {
-  const { result, error } = await fromNullable(1)
+  const { tag, value } = await fromNullable(1)
     .map((a) => a + 1)
     .leftMap((a) => 'its null')
     .runAsPromise()
-  expect(result).toEqual(2)
-  expect(error).toEqual(undefined)
+  expect(value).toEqual(2)
+  expect(tag).toEqual('result')
 })
 
 it('Task should resolve', async () => {
-  const { result, error } = await resolve(1)
+  const { tag, value } = await resolve(1)
     .map((a) => a + 1)
     .runAsPromise()
-  expect(error).toEqual(undefined)
-  expect(result).toEqual(2)
+  expect(value).toEqual(2)
+  expect(tag).toEqual('result')
 })
 
 it('Task should fail', async () => {
-  const { result, error } = await reject(1)
+  const { tag, value } = await reject(1)
     .map((a) => a + 1)
     .runAsPromise()
-  expect(error).toEqual(1)
-  expect(result).toEqual(undefined)
+  expect(value).toEqual(1)
+  expect(tag).toEqual('error')
 })
 
 it('convertAsync should convert async', async () => {
@@ -70,6 +70,37 @@ it('convertAsync should convert async', async () => {
   const myFuncTask = convertAsync(myAsync)
 
   const result = await myFuncTask('ok').runAsPromise()
-  expect(result.hasError).toEqual(true)
-  expect(result.error).toEqual(new Error('doh'))
+  expect(result.tag).toEqual('error')
+  expect(result.value).toEqual(new Error('doh'))
+})
+
+it('task should create a task right', async () => {
+  const myFuncTask = task(({ right }) => Promise.resolve(right(5)))
+
+  const result = await myFuncTask.runAsPromiseResult()
+  expect(result).toEqual(5)
+})
+
+it('task should create a task left', async () => {
+  const myFuncTask = task(({ left }) => Promise.resolve(left(5)))
+
+  const result = await myFuncTask.runAsPromise()
+  expect(result.tag).toEqual('error')
+  expect(result.value).toEqual(5)
+})
+
+it('task should create a task fromNullable', async () => {
+  const myFuncTask = task(({ fromNullable }) => Promise.resolve(fromNullable(5)))
+
+  const result = await myFuncTask.runAsPromiseResult()
+  expect(result).toEqual(5)
+})
+
+it('task should create a task fromNullable null case', async () => {
+  const myFuncTask = task(({ fromNullable }) => Promise.resolve(fromNullable(null)))
+
+  const result = await myFuncTask.runAsPromise()
+
+  expect(result.tag).toEqual('error')
+  expect(result.value).toEqual(null)
 })

@@ -79,10 +79,8 @@ export function runner(operations: Stack<Operation>) {
         const op = stack.pop()
         if (this.cancelled() || !op) {
           return {
-            hasError: false,
-            failure: undefined,
-            error,
-            result
+            tag: 'result' as const,
+            value: result
           }
         }
         try {
@@ -97,7 +95,7 @@ export function runner(operations: Stack<Operation>) {
               case Ops.leftFlatMap: {
                 x = op.f(error)
                 x = await op.f(error).runAsPromise()
-                error = x.result
+                error = x.value
                 break
               }
               case Ops.orElse: {
@@ -129,13 +127,13 @@ export function runner(operations: Stack<Operation>) {
                 x = await x.runAsPromise()
                 const a = op.f[0](result)
                 await a.runAsPromise()
-                if (x.failure) {
-                  throw x.failure
+                if (x.tag === 'failure') {
+                  throw x.value
                 }
-                if (x.error) {
-                  matchError(x.error)
+                if (x.tag === 'error') {
+                  matchError(x.value)
                 } else {
-                  matchResult(x.result)
+                  matchResult(x.value)
                 }
                 break
               }
@@ -188,13 +186,13 @@ export function runner(operations: Stack<Operation>) {
                   x.fold(matchError, matchResult)
                 } else {
                   x = await op.f.runAsPromise()
-                  if (x.failure) {
-                    throw x.failure
+                  if (x.tag === 'failure') {
+                    throw x.value
                   }
-                  if (x.error) {
-                    matchError(x.error)
+                  if (x.tag === 'error') {
+                    matchError(x.value)
                   } else {
-                    matchResult(x.result)
+                    matchResult(x.value)
                   }
                 }
                 break
@@ -205,13 +203,13 @@ export function runner(operations: Stack<Operation>) {
                   x.fold(matchError, matchGroupResult)
                 } else {
                   x = await op.f.runAsPromise()
-                  if (x.failure) {
-                    throw x.failure
+                  if (x.tag === 'failure') {
+                    throw x.value
                   }
-                  if (x.error) {
-                    matchError(x.error)
+                  if (x.tag === 'error') {
+                    matchError(x.value)
                   } else {
-                    matchResult([result, x.result])
+                    matchResult([result, x.value])
                   }
                 }
                 break
@@ -222,11 +220,11 @@ export function runner(operations: Stack<Operation>) {
                   x.fold(matchError, noChange)
                 } else {
                   x = await op.f.runAsPromise()
-                  if (x.failure) {
-                    throw x.failure
+                  if (x.tag === 'failure') {
+                    throw x.value
                   }
-                  if (x.error) {
-                    matchError(x.error)
+                  if (x.tag === 'error') {
+                    matchError(x.value)
                   }
                 }
                 break
@@ -265,18 +263,33 @@ export function runner(operations: Stack<Operation>) {
             }
           }
         } catch (e) {
+          if (e) {
+            return {
+              tag: 'failure' as const,
+              value: e
+            }
+          }
+          if (isLeft) {
+            return {
+              tag: 'error' as const,
+              value: error
+            }
+          }
           return {
-            hasError: isLeft,
-            failure: e,
-            error,
-            result
+            tag: 'result' as const,
+            value: result
           }
         }
       }
+      if (isLeft) {
+        return {
+          tag: 'error' as const,
+          value: error
+        }
+      }
       return {
-        hasError: isLeft,
-        error,
-        result
+        tag: 'result' as const,
+        value: result
       }
     }
   }

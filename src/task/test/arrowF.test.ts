@@ -16,11 +16,11 @@ it('Task should flatMapF - dependency', async () => {
 })
 
 it('Task should flatMapF - fail', async () => {
-  const { error, result } = await Task<number, never>(async () => left(1))
+  const { tag, value } = await Task<number, never>(async () => left(1))
     .flatMapF((a) => async () => right(a * 3))
     .runAsPromise()
-  expect(result).toEqual(undefined)
-  expect(error).toEqual(1)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(1)
 })
 
 it('Task should groupF', async () => {
@@ -31,11 +31,11 @@ it('Task should groupF', async () => {
 })
 
 it('Task should groupF - fail', async () => {
-  const { result, error } = await Task<never, number>(async () => right(1))
+  const { tag, value } = await Task<never, number>(async () => right(1))
     .groupF(async () => left(2))
     .runAsPromise()
-  expect(result).toEqual(1)
-  expect(error).toEqual(2)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(2)
 })
 
 it('Task should group firstF', async () => {

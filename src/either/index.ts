@@ -67,7 +67,8 @@ export const left = <E, A = never>(a: E): Either<E, A> => ({
 
 const fromNullable = <R>(
   a: R | null | undefined
-): Either<null, R> => (a === undefined || a === null ? left(null) : right(a))
+  // @ts-ignore
+): Either<null, R extends null | undefined ? never : R> => (a === undefined || a === null ? left(null) : right(a))
 
 export const either = {
   left,

@@ -5,22 +5,16 @@ export const worker = async (iterator: IterableIterator<[number, Runner]>) => {
   const out = []
   for (const [index, runner] of iterator) {
     const {
-      hasError, error, failure, result
+      tag, value
     } = await runner.run()
-    if (hasError) {
+    if (tag === 'error' || tag === 'failure') {
       // eslint-disable-next-line no-throw-literal
       throw {
-        tag: 'error',
-        value: error
-      }
-    } else if (failure) {
-      // eslint-disable-next-line no-throw-literal
-      throw {
-        tag: 'failure',
-        value: failure
+        tag,
+        value
       }
     }
-    out.push(result)
+    out.push(value)
   }
   return out
 }

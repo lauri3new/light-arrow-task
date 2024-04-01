@@ -13,12 +13,12 @@ it('constructTask should map', async () => {
 })
 
 it('constructTask should map - fail', async () => {
-  const { error, result } = await constructTask<never, number>((res) => res(1))
+  const { tag, value } = await constructTask<never, number>((res) => res(1))
     .flatMap(() => constructTask<number, never>((_, rej) => rej(1)))
     .map((a) => a * 3)
     .runAsPromise()
-  expect(result).toEqual(1)
-  expect(error).toEqual(1)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(1)
 })
 
 it('constructTask should flatMap', async () => {
@@ -29,40 +29,41 @@ it('constructTask should flatMap', async () => {
 })
 
 it('constructTask should flatMap - fail', async () => {
-  const { error, result } = await constructTask<number, never>((_, rej) => rej(1))
+  const { tag, value } = await constructTask<number, never>((_, rej) => rej(1))
     .flatMap((a) => constructTask<never, number>((res) => res(a * 3)))
     .runAsPromise()
-  expect(result).toEqual(undefined)
-  expect(error).toEqual(1)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(1)
 })
 
 it('constructTask should leftMap', async () => {
-  const { error } = await constructTask<number, never>((_, rej) => rej(1))
+  const { value, tag } = await constructTask<number, never>((_, rej) => rej(1))
     .leftMap((a) => a * 3)
     .runAsPromise()
-  expect(error).toEqual(3)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(3)
 })
 
 it('constructTask should biMap - right', async () => {
-  const { error, result } = await constructTask<never, number>((res) => res(1))
+  const { tag, value } = await constructTask<never, number>((res) => res(1))
     .biMap(
       (a) => a * 3,
       (a) => a * 5
     )
     .runAsPromise()
-  expect(result).toEqual(5)
-  expect(error).toEqual(undefined)
+  expect(tag).toEqual('result')
+  expect(value).toEqual(5)
 })
 
 it('constructTask should biMap - left', async () => {
-  const { error, result } = await constructTask<number, never>((_, rej) => rej(1))
+  const { tag, value } = await constructTask<number, never>((_, rej) => rej(1))
     .biMap(
       (a) => a * 3,
       (a) => a * 5
     )
     .runAsPromise()
-  expect(result).toEqual(undefined)
-  expect(error).toEqual(3)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(3)
 })
 
 it('constructTask should group', async () => {
@@ -73,11 +74,11 @@ it('constructTask should group', async () => {
 })
 
 it('constructTask should group - fail', async () => {
-  const { result, error } = await constructTask<never, number>((res) => res(1))
+  const { tag, value } = await constructTask<never, number>((res) => res(1))
     .group(constructTask<number, never>((_, rej) => rej(2)))
     .runAsPromise()
-  expect(result).toEqual(1)
-  expect(error).toEqual(2)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(2)
 })
 
 it('constructTask should group first', async () => {
@@ -129,9 +130,9 @@ it('constructTask should bracket', async () => {
     expect(flag).toEqual(false)
     return resolve<{}>(10)
   })
-  const { result } = await a.runAsPromise()
+  const { tag, value } = await a.runAsPromise()
   expect(flag).toEqual(true)
-  expect(result).toEqual(10)
+  expect(value).toEqual(10)
 })
 
 it('constructTask should bracket - fail case', async () => {
@@ -144,9 +145,9 @@ it('constructTask should bracket - fail case', async () => {
     expect(flag).toEqual(false)
     return reject(10)
   })
-  const { result, error } = await a.runAsPromise()
+  const { tag, value } = await a.runAsPromise()
   expect(flag).toEqual(true)
-  expect(error).toEqual(10)
+  expect(value).toEqual(10)
 })
 
 it('constructTask should run - success', (cb: () => void) => {

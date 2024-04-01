@@ -32,12 +32,12 @@ it('Task should be immutable', async () => {
 })
 
 it('Task should map - fail', async () => {
-  const { error, result } = await Task<never, number>(async () => right(1))
+  const { tag, value } = await Task<never, number>(async () => right(1))
     .flatMap(() => Task<number, never>(async () => left(1)))
     .map((a) => a * 3)
     .runAsPromise()
-  expect(result).toEqual(1)
-  expect(error).toEqual(1)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(1)
 })
 
 it('Task should flatMap', async () => {
@@ -48,11 +48,11 @@ it('Task should flatMap', async () => {
 })
 
 it('Task should flatMap - fail', async () => {
-  const { error, result } = await Task<number, never>(async () => left(1))
+  const { tag, value } = await Task<number, never>(async () => left(1))
     .flatMap((a) => Task<never, number>(async () => right(a * 3)))
     .runAsPromise()
-  expect(result).toEqual(undefined)
-  expect(error).toEqual(1)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(1)
 })
 
 it('Task should flatMapIf - true', async () => {
@@ -72,46 +72,49 @@ it('Task should flatMapIf - false', async () => {
 })
 
 it('Task should leftMap', async () => {
-  const { error } = await Task<number, never>(async () => left(1))
+  const { value, tag } = await Task<number, never>(async () => left(1))
     .leftMap((a) => a * 3)
     .runAsPromise()
-  expect(error).toEqual(3)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(3)
 })
 
 it('Task should leftFlatMap', async () => {
-  const { error } = await Task<number, never>(async () => left(1))
+  const { value, tag } = await Task<number, never>(async () => left(1))
     .leftFlatMap((a) => resolve(a * 3))
     .runAsPromise()
-  expect(error).toEqual(3)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(3)
 })
 
 it('Task should leftFlatMap - right', async () => {
-  const { error } = await Task<never, number>(async () => right(1))
+  const { tag, value } = await Task<never, number>(async () => right(1))
     .leftFlatMap((a) => resolve(a * 3))
     .runAsPromise()
-  expect(error).toEqual(undefined)
+  expect(tag).toEqual('result')
+  expect(value).toEqual(1)
 })
 
 it('Task should biMap - right', async () => {
-  const { error, result } = await Task<never, number>(async () => right(1))
+  const { tag, value } = await Task<never, number>(async () => right(1))
     .biMap(
       (a) => a * 3,
       (a) => a * 5
     )
     .runAsPromise()
-  expect(result).toEqual(5)
-  expect(error).toEqual(undefined)
+  expect(value).toEqual(5)
+  expect(tag).toEqual('result')
 })
 
 it('Task should biMap - left', async () => {
-  const { error, result } = await Task<number, never>(async () => left(1))
+  const { tag, value } = await Task<number, never>(async () => left(1))
     .biMap(
       (a) => a * 3,
       (a) => a * 5
     )
     .runAsPromise()
-  expect(result).toEqual(undefined)
-  expect(error).toEqual(3)
+  expect(tag).toEqual('error')
+  expect(value).toEqual(3)
 })
 
 it('Task should group', async () => {
@@ -122,11 +125,11 @@ it('Task should group', async () => {
 })
 
 it('Task should group - fail', async () => {
-  const { result, error } = await Task<never, number>(async () => right(1))
+  const { tag, value } = await Task<never, number>(async () => right(1))
     .group(Task<number, never>(async () => left(2)))
     .runAsPromise()
-  expect(result).toEqual(1)
-  expect(error).toEqual(2)
+  expect(value).toEqual(2)
+  expect(tag).toEqual('error')
 })
 
 it('Task should group first', async () => {
@@ -174,8 +177,8 @@ it('Task should ifOrElse', async () => {
     Task<string, never>(async () => left('yo'))
   )
 
-  const { error } = await a.runAsPromise()
-  expect(error).toEqual('hey')
+  const { value } = await a.runAsPromise()
+  expect(value).toEqual('hey')
 })
 
 it('Task should ifOrElse', async () => {
@@ -184,8 +187,8 @@ it('Task should ifOrElse', async () => {
     Task<string, never>(async () => left('yo'))
   )
 
-  const { error } = await a.runAsPromise()
-  expect(error).toEqual('yo')
+  const { value } = await a.runAsPromise()
+  expect(value).toEqual('yo')
 })
 
 it('Task should bracket', async () => {
@@ -200,9 +203,9 @@ it('Task should bracket', async () => {
     expect(flag).toEqual(false)
     return resolve<number>(10)
   })
-  const { result } = await a.runAsPromise()
+  const { value } = await a.runAsPromise()
   expect(flag).toEqual(true)
-  expect(result).toEqual(10)
+  expect(value).toEqual(10)
 })
 
 it('Task should bracket - fail case', async () => {
@@ -217,9 +220,9 @@ it('Task should bracket - fail case', async () => {
     expect(flag).toEqual(false)
     return reject(10)
   })
-  const { result, error } = await a.runAsPromise()
+  const { value } = await a.runAsPromise()
   expect(flag).toEqual(true)
-  expect(error).toEqual(10)
+  expect(value).toEqual(10)
 })
 
 it('Task should run - success', (cb: () => void) => {

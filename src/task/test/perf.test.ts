@@ -60,8 +60,9 @@ it('orElse should not stack overflow', async () => {
       a = a.orElse(Task<number, never>(async () => left(10001)))
     }
   }
-  const { result, error, failure } = await a.runAsPromise({})
-  expect(result).toEqual(10001)
+  const { value, tag } = await a.runAsPromise({})
+  expect(tag).toEqual('result')
+  expect(value).toEqual(10001)
 })
 
 it('group should not stack overflow', async () => {
