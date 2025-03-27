@@ -128,9 +128,9 @@ export interface Task<E, R> {
 }
 
 class InternalTask<E, R> {
-  private ctx: any;
+  private ctx: any
 
-  private operations: Stack<Operation>;
+  private operations: Stack<Operation>
 
   public get __ops(): Stack<Operation> {
     return this.operations

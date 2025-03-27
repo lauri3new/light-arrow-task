@@ -26,7 +26,6 @@ export type Either<E, A> = {
   fold:<B, C>(f:(_:E) => B, g:(_:A) => C) => B | C
 }
 
-
 // type aliases
 
 export type Right<A> = Either<never, A>
@@ -63,7 +62,6 @@ export const left = <E, A = never>(a: E): Either<E, A> => ({
   flatMap: _ => left<E>(a),
   fold: (f, _) => f(a)
 })
-
 
 const fromNullable = <R>(
   a: R | null | undefined
