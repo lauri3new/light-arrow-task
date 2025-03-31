@@ -1,5 +1,5 @@
 <div align="center">
-<img height="100" src="https://raw.githubusercontent.com/lauri3new/light-Task/master/Task1.png">
+<img height="100" src="https://raw.githubusercontent.com/lauri3new/light-task/master/Task1.png">
 <h1 >Light-Task</h1>
 </div>
 
@@ -21,7 +21,7 @@ Inspiration from the highly recommended book _functional programming in scala_ M
 Installation
 
 ```bash
-npm install @light-Task/task
+npm install @light-task/task
 ```
 
 ### Tasks
