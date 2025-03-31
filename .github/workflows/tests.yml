@@ -1,6 +1,10 @@
 name: tests
 
-on: [push]
+on:
+  pull_request:
+    types: [opened, reopened, synchronize, edited]
+  push:
+    branches: [main]
 
 jobs:
   build:
@@ -11,7 +15,7 @@ jobs:
       - name: Use Node.js
         uses: actions/setup-node@v1
         with:
-          node-version: "12.x"
+          node-version: "22.x"
       - run: npm install --include=dev
       - run: npm run build --if-present
       - run: npm test
