@@ -8,13 +8,6 @@ it('Task should flatMapF', async () => {
   expect(result).toEqual(3)
 })
 
-it('Task should flatMapF - dependency', async () => {
-  const result = await Task<never, number>(async () => right(1))
-    .flatMapF((a) => async () => right(a * 3))
-    .runAsPromiseResult()
-  expect(result).toEqual(3)
-})
-
 it('Task should flatMapF - fail', async () => {
   const { tag, value } = await Task<number, never>(async () => left(1))
     .flatMapF((a) => async () => right(a * 3))

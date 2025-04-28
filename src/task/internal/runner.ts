@@ -87,15 +87,20 @@ export function runner(operations: Stack<Operation>) {
           if (isLeft) {
             switch (op._tag) {
               case Ops.leftMap: {
-                if (isLeft) {
-                  error = op.f(error)
-                }
+                error = op.f(error)
                 break
               }
               case Ops.leftFlatMap: {
-                x = op.f(error)
                 x = await op.f(error).runAsPromise()
-                error = x.value
+                if (x.tag === 'failue') {
+                  throw x.value
+                }
+                if (x.tag === 'error') {
+                  matchError(x.value)
+                } else {
+                  resetError()
+                  matchResult(x.value)
+                }
                 break
               }
               case Ops.orElse: {

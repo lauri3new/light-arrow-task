@@ -79,15 +79,23 @@ it('Task should leftMap', async () => {
   expect(value).toEqual(3)
 })
 
-it('Task should leftFlatMap', async () => {
+it('Task should leftFlatMap - to left', async () => {
   const { value, tag } = await Task<number, never>(async () => left(1))
-    .leftFlatMap((a) => resolve(a * 3))
+    .leftFlatMap((a) => reject(a * 3))
     .runAsPromise()
   expect(tag).toEqual('error')
   expect(value).toEqual(3)
 })
 
-it('Task should leftFlatMap - right', async () => {
+it('Task should leftFlatMap - to right', async () => {
+  const { value, tag } = await Task<number, never>(async () => left(1))
+    .leftFlatMap((a) => resolve(a * 3))
+    .runAsPromise()
+  expect(tag).toEqual('result')
+  expect(value).toEqual(3)
+})
+
+it('Task should leftFlatMap - from right (should not map)', async () => {
   const { tag, value } = await Task<never, number>(async () => right(1))
     .leftFlatMap((a) => resolve(a * 3))
     .runAsPromise()
