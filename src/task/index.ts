@@ -40,7 +40,7 @@ export interface Task<E, R> {
   /**
    * Returns an Task with the error value mapped by the function f.
    */
-  leftFlatMap: <E2>(f: (_: E) => Task<never, E2>) => Task<E2, R>;
+  leftFlatMap: <E2, R2>(f: (_: E) => Task<E2, R2>) => Task<E2, R | R2>;
   /**
    * Returns an Task with the error value mapped by the function f, and the result value mapped by function g.
    */
@@ -284,14 +284,14 @@ class InternalTask<E, R> {
     >
   }
 
-  leftFlatMap<E2>(f: (_: E) => Task<never, E2>): Task<E2, R> {
-    return new InternalTask<E2, R>(
+  leftFlatMap<E2, R2>(f: (_: E) => Task<E2, R2>): Task<E2, R | R2> {
+    return new InternalTask<E2, R | R2>(
       undefined,
       this.operations.prepend({
         _tag: Ops.leftFlatMap,
         f
       })
-    ) as Task<E2, R>
+    ) as Task<E2, R | R2>
   }
 
   race<E, R>(f: Task<E, R>): Task<E, R> {
